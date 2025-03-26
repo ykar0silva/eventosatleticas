@@ -1,31 +1,68 @@
 package com.eventosatleticas.controller;
 
+import com.eventosatleticas.dto.LoginRequest;
+import com.eventosatleticas.dto.LoginResponse;
 import com.eventosatleticas.dto.RegistroRequest;
 import com.eventosatleticas.model.Administrador;
 import com.eventosatleticas.model.Arbitro;
 import com.eventosatleticas.model.Organizador;
 import com.eventosatleticas.model.Usuario;
+import com.eventosatleticas.security.JwtUtils;
+import com.eventosatleticas.security.UserDetailsImpl;
 import com.eventosatleticas.service.UsuarioService;
+
 import jakarta.validation.Valid;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+    
+    @Autowired
+    private AuthenticationManager authenticationManager;
 
     @Autowired
     private UsuarioService usuarioService;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
-
+    
+    @Autowired
+    private JwtUtils jwtUtils;
+    
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
+        logger.info("Tentativa de login - Email: " + loginRequest.getEmail() + ", Senha: " + loginRequest.getSenha());
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getSenha())
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+            logger.info("Autenticação bem-sucedida - Email: " + userDetails.getUsername() + ", Role: " + userDetails.getRole());
+            String jwt = jwtUtils.generateJwtToken(userDetails);
+            logger.info("Token gerado para: " + loginRequest.getEmail());
+            return ResponseEntity.ok(new LoginResponse(jwt, userDetails.getId(), userDetails.getRole()));
+        } catch (Exception e) {
+            logger.error("Falha no login para " + loginRequest.getEmail() + ": " + e.getMessage(), e);
+            return ResponseEntity.status(401).body("Credenciais inválidas");
+        }
+    }
+    
     @PostMapping("/registrar")
     public ResponseEntity<?> registrar(@Valid @RequestBody RegistroRequest request) {
         logger.info("Requisição recebida para registrar: " + request.getEmail());
@@ -52,7 +89,7 @@ public class AuthController {
             }
 
             novoUsuario.setEmail(request.getEmail());
-            novoUsuario.setSenha(passwordEncoder.encode(request.getSenha()));
+            novoUsuario.setSenha(passwordEncoder.encode(request.getSenha())); 
             novoUsuario.setRole(request.getTipoUsuario().toUpperCase());
 
             Usuario usuarioSalvo = usuarioService.registrar(novoUsuario);
@@ -63,5 +100,13 @@ public class AuthController {
             logger.error("Erro ao registrar usuário: " + e.getMessage());
             return ResponseEntity.badRequest().body("Erro no registro: " + e.getMessage());
         }
+    }
+    
+    @GetMapping("/test-password")
+    public String testPassword() {
+        String rawPassword = "123456";
+        String encodedPassword = "$2a$10$24Bvjo1WaHPly8QRebkNrOEcSOodxNSvz69ldw/1aka6PYryZGMRy"; 
+        boolean matches = passwordEncoder.matches(rawPassword, encodedPassword);
+        return "Senhas coincidem: " + matches;
     }
 }

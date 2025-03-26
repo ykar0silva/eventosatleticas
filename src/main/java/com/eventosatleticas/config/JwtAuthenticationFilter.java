@@ -1,7 +1,6 @@
 package com.eventosatleticas.config;
 
 import com.eventosatleticas.security.JwtUtils;
-import com.eventosatleticas.security.UserDetailsImpl;
 import com.eventosatleticas.security.UserDetailsServiceImpl;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -35,31 +34,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = parseJwt(request);
             if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
-                String username = jwtUtils.getUsernameFromJwtToken(jwt);
-                UserDetailsImpl userDetails = (UserDetailsImpl) userDetailsService.loadUserByUsername(username);
-
-                Long userIdFromToken = jwtUtils.getUserIdFromJwtToken(jwt);
-                if (!userDetails.getId().equals(userIdFromToken)) {
-                    logger.warn("ID do usuário no token não corresponde ao usuário carregado");
-                    throw new SecurityException("Token inválido - ID de usuário inconsistente");
-                }
-
-                UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                        userDetails,
-                        null,
-                        userDetails.getAuthorities());
+                String email = jwtUtils.getEmailFromJwtToken(jwt); // Ajustado para getEmailFromJwtToken
+                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                request.setAttribute("userId", userDetails.getId());
-                request.setAttribute("userRole", userDetails.getRole());
             }
         } catch (Exception e) {
-            logger.error("Falha ao processar token JWT: {}", e.getMessage());
+            logger.error("Erro ao autenticar usuário via JWT: " + e.getMessage());
         }
-
         filterChain.doFilter(request, response);
     }
 

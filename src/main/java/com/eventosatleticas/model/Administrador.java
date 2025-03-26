@@ -6,8 +6,9 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "administradores", schema = "eventos_schema")
 public class Administrador extends Usuario {
-    private String nivelAcesso; // Atributo específico, se necessário
-
+    private String nivelAcesso; 
+    
+    
     // Getters e Setters
     public String getNivelAcesso() {
         return nivelAcesso;
