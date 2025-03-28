@@ -5,6 +5,7 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -19,43 +20,39 @@ public class JwtUtils {
     @Value("${jwt.expirationMs}")
     private int jwtExpirationMs;
 
-    public String generateJwtToken(UserDetailsImpl userDetails) {
-        logger.info("Gerando token JWT para: " + userDetails.getUsername());
+    public String generateToken(String username) {
         return Jwts.builder()
-                .setSubject(userDetails.getUsername())
-                .claim("role", userDetails.getRole())
-                .claim("userId", userDetails.getId())
-                .setIssuedAt(new Date())
-                .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(SignatureAlgorithm.HS256, jwtSecret.getBytes())
-                .compact();
+            .setSubject(username)
+            .setIssuedAt(new Date())
+            .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
+            .signWith(SignatureAlgorithm.HS512, jwtSecret)
+            .compact();
     }
 
-    public String getEmailFromJwtToken(String token) {
+    public String getUsernameFromToken(String token) {
         return Jwts.parser()
-                .setSigningKey(jwtSecret.getBytes())
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+            .setSigningKey(jwtSecret)
+            .parseClaimsJws(token)
+            .getBody()
+            .getSubject();
     }
 
-    public Long getUserIdFromJwtToken(String token) {
-        return Jwts.parser()
-                .setSigningKey(jwtSecret.getBytes())
-                .parseClaimsJws(token)
-                .getBody()
-                .get("userId", Long.class);
-    }
-
-    public boolean validateJwtToken(String authToken) {
+    public boolean validateToken(String token, UserDetails userDetails) {
         try {
-            Jwts.parser()
-                    .setSigningKey(jwtSecret.getBytes())
-                    .parseClaimsJws(authToken);
-            return true;
+            String username = getUsernameFromToken(token);
+            return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
         } catch (Exception e) {
-            logger.error("Token JWT inválido: " + e.getMessage());
+            logger.error("Token inválido: {}", e.getMessage());
             return false;
         }
+    }
+
+    private boolean isTokenExpired(String token) {
+        Date expiration = Jwts.parser()
+            .setSigningKey(jwtSecret)
+            .parseClaimsJws(token)
+            .getBody()
+            .getExpiration();
+        return expiration.before(new Date());
     }
 }

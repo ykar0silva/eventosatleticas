@@ -1,11 +1,19 @@
 package com.eventosatleticas.model;
 
 import jakarta.persistence.*;
+import lombok.Data;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
+import java.util.Collections;
 
 @Entity
 @Table(name = "usuario", schema = "eventos_schema")
+@Data
 @Inheritance(strategy = InheritanceType.JOINED)
-public abstract class Usuario {
+public abstract class Usuario implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -19,7 +27,44 @@ public abstract class Usuario {
     @Column(name = "role", nullable = false)
     private String role;
 
-    // Getters e Setters
+    // Implementação dos métodos de UserDetails
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // Retorna o papel como uma autoridade do Spring Security (ex.: "ROLE_ADMIN")
+        return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role));
+    }
+
+    @Override
+    public String getPassword() {
+        return senha;
+    }
+
+    @Override
+    public String getUsername() {
+        return email; // Usa o email como username para autenticação
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true; // Conta nunca expira
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true; // Conta não está bloqueada
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true; // Credenciais não expiram
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true; // Conta está habilitada
+    }
+
+    // Getters e Setters (mantidos para compatibilidade com Lombok @Data)
     public Long getId() {
         return id;
     }

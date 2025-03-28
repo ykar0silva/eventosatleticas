@@ -1,7 +1,10 @@
 package com.eventosatleticas.security;
 
 import com.eventosatleticas.model.Usuario;
-import com.eventosatleticas.repository.UsuarioRepository;
+import com.eventosatleticas.service.UsuarioService;
+
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,20 +15,22 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
-    private static final Logger logger = LoggerFactory.getLogger(UserDetailsServiceImpl.class); // Correção aqui
 
     @Autowired
-    private UsuarioRepository usuarioRepository;
+    private UsuarioService usuarioService;
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        logger.info("Carregando usuário para email: " + email);
-        Usuario usuario = usuarioRepository.findByEmail(email)
-                .orElseThrow(() -> {
-                    logger.error("Usuário não encontrado: " + email);
-                    return new UsernameNotFoundException("Usuário não encontrado: " + email);
-                });
-        logger.info("Usuário carregado - Email: " + usuario.getEmail() + ", Senha: '" + usuario.getSenha() + "', Role: " + usuario.getRole());
-        return new UserDetailsImpl(usuario);
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        Optional<Usuario> usuarioOpt = usuarioService.findByEmail(username);
+        if (usuarioOpt.isEmpty()) {
+            throw new UsernameNotFoundException("Usuário não encontrado: " + username);
+        }
+        
+        Usuario usuario = usuarioOpt.get();
+        return new org.springframework.security.core.userdetails.User(
+            usuario.getEmail(),
+            usuario.getSenha(),
+            usuario.getAuthorities()
+        );
     }
 }

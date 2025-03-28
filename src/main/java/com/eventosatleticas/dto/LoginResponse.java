@@ -1,18 +1,20 @@
 package com.eventosatleticas.dto;
 
-
 public class LoginResponse {
     private String token;
-    private Long userId;
-    private String role;
 
-    public LoginResponse(String token, Long userId, String role) {
+
+    public LoginResponse(String token) {
         this.token = token;
-        this.userId = userId;
-        this.role = role;
     }
 
-    public String getToken() { return token; }
-    public Long getUserId() { return userId; }
-    public String getRole() { return role; }
+    // Getter para token
+    public String getToken() {
+        return token;
+    }
+
+    // Setter para token
+    public void setToken(String token) {
+        this.token = token;
+    }
 }

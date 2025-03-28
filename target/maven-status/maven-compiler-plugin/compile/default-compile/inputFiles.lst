@@ -26,7 +26,6 @@
 /home/ykaro/Desktop/projeto_BD/eventosatleticas/src/main/java/com/eventosatleticas/repository/OrganizadorRepository.java
 /home/ykaro/Desktop/projeto_BD/eventosatleticas/src/main/java/com/eventosatleticas/repository/UsuarioRepository.java
 /home/ykaro/Desktop/projeto_BD/eventosatleticas/src/main/java/com/eventosatleticas/security/JwtUtils.java
-/home/ykaro/Desktop/projeto_BD/eventosatleticas/src/main/java/com/eventosatleticas/security/UserDetailsImpl.java
 /home/ykaro/Desktop/projeto_BD/eventosatleticas/src/main/java/com/eventosatleticas/security/UserDetailsServiceImpl.java
 /home/ykaro/Desktop/projeto_BD/eventosatleticas/src/main/java/com/eventosatleticas/service/AtleticaService.java
 /home/ykaro/Desktop/projeto_BD/eventosatleticas/src/main/java/com/eventosatleticas/service/CompeticaoService.java

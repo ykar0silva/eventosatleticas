@@ -10,6 +10,5 @@ import org.springframework.data.jpa.repository.Query;
 
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     boolean existsByEmail(String email);
-    @Query("SELECT u FROM Usuario u WHERE u.email = :email")
     Optional<Usuario> findByEmail(String email);
 }
